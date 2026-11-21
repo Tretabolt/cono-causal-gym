@@ -204,6 +204,22 @@ outro projeto — não é esta unificação.
 | 19/11 | margem 0,05 do veto JSD | aprovado, v0.1 |
 | 20/11 | este documento; VarPn e veto relativo portados ao harness | adotado |
 
+## 13. Espaço J — o workspace do Meta-Símbolo (20/11)
+
+Análogo funcional do J-space (Anthropic, jul/2026). Cinco propriedades,
+cada uma testada: (1) pequeno e seletivo — capacidade 3, segurar um
+quarto conteúdo despeja o mais antigo; (2) relatável — `relatar()`
+devolve o conteúdo em forma legível; (3) segurável — persiste entre
+episódios até ser editado, despejado ou limpo; (4) usável no raciocínio
+— o conteúdo é uma direção (geodésica em rascunho) que vai para a
+auditoria; (5) editável e causal — editar o conteúdo segurado muda o
+veredito da auditoria (teste da troca). O Meta-Símbolo propõe sozinho
+(`tentar_auto_proposta`): a direção nasce das medições (v0.1 — Símbolo
+morto perto da borda pede afrouxar o limiar), não de fora. Limite
+honesto: análogo funcional, não o J-space — não prova consciência,
+prova arquitetura. Semente de longo prazo: traços do raciocínio do
+Dan (EEG como visão — EEG hoje não decodifica conteúdo de raciocínio).
+
 ## 12. Onde vive cada implementação
 
 | definição | gym | harness | engine |
@@ -214,3 +230,4 @@ outro projeto — não é esta unificação.
 | veto JSD | `cono_gym/causal.py:veto_jsd` | `packages/mnhi_memory/heptagram.py:evaluate_law_change` | — |
 | hash de aresta | `cono_gym/hasher.py:hash_rastro` | `packages/mnhi_memory/hasher.py:hash_edge` | `src/mnhi/layer0_hasher.py:id_aresta` (selo) |
 | D hiperbólica | — | `metrics.poincare_distance` | `extrapolation.py:causal_kl_divergence` (D_KL) |
+| Espaço J | `cono_gym/workspace.py:EspacoJ` | — | — |

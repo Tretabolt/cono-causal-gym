@@ -67,6 +67,9 @@ class TesteTransporte(unittest.TestCase):
                 "propose_geodesic",
                 "audit_geodesic",
                 "request_diversity_audit",
+                "hold_direction",
+                "report_workspace",
+                "edit_direction",
             ],
         )
 

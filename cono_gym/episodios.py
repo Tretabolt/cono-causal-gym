@@ -112,7 +112,12 @@ class LoopEpisodios:
             "request_symbol_formation",
             {"serial_simbolo": "simbolo-tudo"},
         )
-        return {"episodio": n, **self._medir(n)}
+        medicao = self._medir(n)
+        # O Meta-Símbolo, se existe, tenta propor sozinho: a direção
+        # nasce das medições, passa pelo Espaço J e é auditada. Na
+        # maioria dos episódios não há motivo medido e nada acontece.
+        medicao["auto_proposta"] = servidor.tentar_auto_proposta()
+        return {"episodio": n, **medicao}
 
     def rodar(self, n_episodios=12):
         episodios = [self._episodio(n + 1) for n in range(n_episodios)]

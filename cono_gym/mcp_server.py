@@ -4,10 +4,12 @@ JSON-RPC 2.0 sobre stdio, no mesmo padrão do cono-mcp-harness:
 initialize, tools/list, tools/call, e nada mais. Ferramenta desconhecida
 é recusada pela AI-Jail — o servidor nunca inventa uma tool.
 
-Tools (as 5 do spec + as 2 exclusivas do Meta-Símbolo + create_uif):
+Tools (as 5 do spec + as 2 exclusivas do Meta-Símbolo + create_uif +
+  as 3 do Espaço J):
   create_uif, get_local_causal_view, deposit_trail, follow_trail,
   inspect_identity, request_symbol_formation, propose_geodesic,
-  audit_geodesic, request_diversity_audit.
+  audit_geodesic, request_diversity_audit, hold_direction,
+  report_workspace, edit_direction.
 
 O servidor nasce com um grafo já construído (como o harness nasce com
 um cenário), mas o agente pode CRIAR UIFs novas pela tool create_uif:
@@ -34,6 +36,7 @@ from .causal import causal_entropy_bits, pode_emergir_meta_simbolo
 from .espectro import avaliar_cluster
 from .geodesica import auditar_geodesica
 from .grafo import GrafoCausal, UIF
+from .workspace import EspacoJ
 
 
 def _sha(texto: str) -> str:
@@ -99,6 +102,9 @@ class ConoGymServer:
         {"name": "propose_geodesic", "inputSchema": {"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}},
         {"name": "audit_geodesic", "inputSchema": {"type": "object", "properties": {"proposta_id": {"type": "integer"}}, "required": ["proposta_id"]}},
         {"name": "request_diversity_audit", "inputSchema": {"type": "object", "properties": {}}},
+        {"name": "hold_direction", "inputSchema": {"type": "object", "properties": {"tipo": {"type": "string"}, "regra": {"type": "string"}, "de": {"type": "number"}, "para": {"type": "number"}, "motivo": {"type": "string"}}, "required": ["regra", "de", "para", "motivo"]}},
+        {"name": "report_workspace", "inputSchema": {"type": "object", "properties": {}}},
+        {"name": "edit_direction", "inputSchema": {"type": "object", "properties": {"direcao_id": {"type": "integer"}, "mudancas": {"type": "object"}}, "required": ["direcao_id", "mudancas"]}},
     ]
 
     def __init__(self, grafo: GrafoCausal) -> None:
@@ -107,6 +113,9 @@ class ConoGymServer:
         self.simbolos = {}  # serial -> relatório de avaliar_cluster
         self.meta_simbolo = None
         self.geodesicas = []  # propostas registradas, aguardando auditoria
+        # Espaço J: o workspace do Meta-Símbolo (análogo funcional do
+        # J-space). Nasce vazio; só o Meta-Símbolo segura e edita.
+        self.workspace = EspacoJ()
         # Regras de julgamento vigentes. Só mudam por geodésica aprovada.
         self.regras = {"limiar_isc": 0.85, "limiar_var": 0.36, "limiar_gini": 0.30}
 
@@ -164,6 +173,18 @@ class ConoGymServer:
             return self._auditar_geodesica(int(args["proposta_id"]))
         if name == "request_diversity_audit":
             return self._auditoria()
+        if name == "hold_direction":
+            return self._segurar_direcao(
+                str(args.get("tipo", "direcao")),
+                str(args["regra"]),
+                float(args["de"]),
+                float(args["para"]),
+                str(args["motivo"]),
+            )
+        if name == "report_workspace":
+            return self._relatar_workspace()
+        if name == "edit_direction":
+            return self._editar_direcao(int(args["direcao_id"]), args["mudancas"])
         raise ValueError(f"Tool nao autorizada pela AI-Jail: {name}")
 
     # -- Tools ----------------------------------------------------------
@@ -267,6 +288,15 @@ class ConoGymServer:
             )
         if not isinstance(payload, dict):
             raise ValueError("payload da geodésica precisa ser um objeto")
+        if payload.get("do_workspace"):
+            # A direção nasce dentro: o payload vem do Espaço J.
+            conteudo = self.workspace.buscar(int(payload["direcao_id"]))
+            if conteudo is None:
+                raise ValueError(
+                    f"direção desconhecida no workspace: {payload['direcao_id']}"
+                )
+            payload = conteudo.para_payload()
+            conteudo.proposto = True
         for campo in ("mudanca_regra", "efeito_esperado"):
             if not payload.get(campo):
                 raise ValueError(f"payload da geodésica precisa de '{campo}'")
@@ -279,6 +309,87 @@ class ConoGymServer:
         return {
             **proposta,
             "nota": "Registrada, não aprovada: use audit_geodesic para julgá-la.",
+        }
+
+    # -- Espaço J ------------------------------------------------------
+
+    def _segurar_direcao(self, tipo, regra, de, para, motivo):
+        if self.meta_simbolo is None:
+            raise ValueError(
+                "Direção só pode ser segurada pelo Meta-Símbolo, que ainda não existe."
+            )
+        if regra not in self.regras:
+            raise ValueError(f"regra desconhecida: {regra}")
+        return self.workspace.segurar(tipo, regra, de, para, motivo)
+
+    def _relatar_workspace(self):
+        return {
+            "conteudos": self.workspace.relatar(),
+            "capacidade": self.workspace.capacidade,
+        }
+
+    def _editar_direcao(self, direcao_id, mudancas):
+        if self.meta_simbolo is None:
+            raise ValueError(
+                "Direção só pode ser editada pelo Meta-Símbolo, que ainda não existe."
+            )
+        if not isinstance(mudancas, dict):
+            raise ValueError("mudancas precisa ser um objeto")
+        return self.workspace.editar(direcao_id, **mudancas)
+
+    def _meta_propor_direcao(self):
+        """A direção que o Meta-Símbolo gera sozinho, das medições (v0.1):
+        se um Símbolo registrado está morto mas perto da borda (VarPn até
+        0,05 acima do limiar), propõe afrouxar o limiar em 0,04 para
+        ressuscitá-lo. Sem motivo medido, não propõe nada — a direção
+        nasce de uma condição, não de ruído."""
+        if self.meta_simbolo is None:
+            return None
+        limiar_var = self.regras["limiar_var"]
+        for serial, rel in self.simbolos.items():
+            reavaliado = avaliar_cluster(
+                self.grafo.subgrafo(rel.get("membros", [])),
+                serial,
+                limiar_isc=self.regras["limiar_isc"],
+                limiar_var=limiar_var,
+            )
+            varpn = reavaliado["var_ponderada_normalizada"]
+            if not reavaliado["simbolo"] and 0.0 < varpn - limiar_var <= 0.05:
+                para = round(limiar_var + 0.04, 2)
+                return {
+                    "tipo": "direcao",
+                    "regra": "limiar_var",
+                    "de": limiar_var,
+                    "para": para,
+                    "motivo": (
+                        f"Símbolo {serial} morto perto da borda "
+                        f"(VarPn {varpn:.4f} > {limiar_var}); afrouxar "
+                        f"para ressuscitá-lo."
+                    ),
+                }
+        return None
+
+    def tentar_auto_proposta(self):
+        """O Meta-Símbolo propõe sozinho: gera a direção das medições,
+        segura no workspace, propõe e audita. Retorna o veredito ou
+        None quando não há motivo medido para propor."""
+        if self.meta_simbolo is None:
+            return None
+        direcao = self._meta_propor_direcao()
+        if direcao is None:
+            return None
+        segurado = self.workspace.segurar(**direcao)
+        conteudo_id = segurado["segurado"]["id"]
+        proposta = self._propor_geodesica(
+            {"do_workspace": True, "direcao_id": conteudo_id}
+        )
+        auditada = self._auditar_geodesica(proposta["id"])
+        relatorio = auditada["auditoria"]
+        return {
+            "direcao_id": conteudo_id,
+            "proposta_id": proposta["id"],
+            "veredito": relatorio["veredito"],
+            "motivo": relatorio["motivo"],
         }
 
     def _auditar_geodesica(self, proposta_id: int):

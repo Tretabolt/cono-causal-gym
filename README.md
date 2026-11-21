@@ -15,7 +15,7 @@ e a formação de identidade. Não é um jogo de salas, portas e objetos.
   de emergência de Símbolo: ISC_Local ≥ 0,85 E VarPn ≤ 0,36 (a Var(λ)
   antiga fica só como diagnóstico).
 - `cono_gym/demo.py` — Quatro clusters, quatro vereditos.
-- `testes/test_gym.py` + `testes/test_mcp.py` + `testes/test_episodios.py` + `testes/test_geodesica.py` + `testes/test_causal.py` + `testes/test_var_ponderada.py` — 89 testes (14 + 21 + 8 + 9 + 18 + 19).
+- `testes/test_gym.py` + `testes/test_mcp.py` + `testes/test_episodios.py` + `testes/test_geodesica.py` + `testes/test_causal.py` + `testes/test_var_ponderada.py` + `testes/test_workspace.py` — 99 testes (14 + 21 + 8 + 9 + 19 + 19 + 9).
 
 Python stdlib-only, como os outros dois repos.
 
@@ -232,6 +232,32 @@ relação ao 0,05: um x100 num K10 era Símbolo (0,0431 < 0,05) e agora
 morre (VarPn 0,479 > 0,36) — era o caso onde o limiar antigo estava
 mais frouxo. Limite honesto: a margem da morte de A na geodésica
 continua fina (0,3662 contra o limiar 0,36). Suíte com 89 testes.
+
+## Espaço J — o workspace do Meta-Símbolo (20/11)
+
+Análogo funcional do J-space (Anthropic, "Verbalizable Representations
+Form a Global Workspace in Language Models", jul/2026): o Meta-Símbolo
+segura direções — geodésicas em rascunho — num workspace pequeno (capacidade
+3, v0.1), relatável (`report_workspace`), segurável entre episódios, e
+editável de um jeito que muda o veredito da auditoria (o teste da troca:
+editar o `para` de 0,40 para 0,03 transforma uma geodésica aprovada numa
+rejeitada). Tools novas: `hold_direction`, `report_workspace`,
+`edit_direction` (12 tools no total); `propose_geodesic` aceita
+`{"do_workspace": true, "direcao_id": N}`.
+
+O Meta-Símbolo agora propõe sozinho: `tentar_auto_proposta` gera a direção
+das medições (v0.1 — um Símbolo registrado morto perto da borda, VarPn até
+0,05 acima do limiar, pede afrouxar o limiar em 0,04), segura no workspace,
+propõe e audita. No loop padrão nada acontece sem motivo medido (12/12
+episódios sem auto-proposta, meta no ep 4); no estado da geodésica a
+auto-proposta dispara e é aprovada (regras passam a 0,40). Limite honesto:
+isto é um análogo funcional, não o J-space — não prova consciência, prova
+arquitetura. A semente das direções hoje são as medições do gym; a visão
+de longo prazo, dada pelo Dan, é semear o workspace com traços do
+raciocínio dele (EEG como doação do próprio raciocínio — EEG hoje
+decodifica sinais grossos, não conteúdo de raciocínio; a semente real,
+por enquanto, são os traços em texto). Suíte com 99 testes (89 + 9 do
+workspace + 1 do veto com regressão, 20/11).
 
 ## Rodar tudo
 
