@@ -109,16 +109,29 @@ def jsd_uniforme_para_tirania(n):
     return jsd_bits([1.0 / n] * n, prototipo_tirania(n))
 
 
-def veto_jsd(iscs_nova, margem=MARGEM_JSD_VETO):
+def veto_jsd(iscs_nova, margem=MARGEM_JSD_VETO, iscs_antiga=None):
     """Veto JSD: a distribuição projetada está significativamente mais
-    perto da Tirania do que uma distribuição equilibrada estaria?
-    Retorna (vetado, jsd_nova, jsd_uniforme). Sem distribuição
-    projetada (menos de 2 ISCs), não há o que vetar."""
+    perto da Tirania do que uma distribuição equilibrada estaria, ou
+    regrediu em direção à Tirania? Retorna (vetado, jsd_nova,
+    jsd_uniforme). Sem distribuição projetada (menos de 2 ISCs), não há
+    o que vetar. A checagem de regressão só se aplica quando o número
+    de Símbolos não muda (o protótipo depende de N). Canônico:
+    DEFINICOES.md, seção 5."""
     if len(iscs_nova) < 2:
         return False, None, None
     jsd_nova = jsd_para_tirania(iscs_nova)
     jsd_uniforme = jsd_uniforme_para_tirania(len(iscs_nova))
-    return jsd_nova < jsd_uniforme - margem, jsd_nova, jsd_uniforme
+    if jsd_nova < jsd_uniforme - margem:
+        return True, jsd_nova, jsd_uniforme
+    if (
+        iscs_antiga is not None
+        and len(iscs_antiga) == len(iscs_nova)
+        and len(iscs_antiga) >= 2
+    ):
+        jsd_antiga = jsd_para_tirania(iscs_antiga)
+        if jsd_antiga is not None and jsd_nova < jsd_antiga:
+            return True, jsd_nova, jsd_uniforme
+    return False, jsd_nova, jsd_uniforme
 
 
 def pode_emergir_meta_simbolo(iscs, tensao_presente, min_isc_global=MIN_ISC_GLOBAL):

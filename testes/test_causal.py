@@ -122,6 +122,21 @@ class TesteHCausal(unittest.TestCase):
         self.assertTrue(veto_jsd([1.0, 1.0, 0.301])[0])
         self.assertFalse(veto_jsd([1.0])[0])
 
+    def test_veto_jsd_regressao(self):
+        # Regressão (DEFINICOES.md, seção 5): [1,1,1] -> [1,1,0.85] tem
+        # JSD 0,2667 -> 0,2524 — acima do piso relativo (0,2167), então
+        # o piso sozinho não vetaria, mas a regressão veta. O reverso
+        # não veta, e com N diferente a regressão não se aplica.
+        self.assertTrue(
+            veto_jsd([1.0, 1.0, 0.85], iscs_antiga=[1.0, 1.0, 1.0])[0]
+        )
+        self.assertFalse(
+            veto_jsd([1.0, 1.0, 1.0], iscs_antiga=[1.0, 1.0, 0.85])[0]
+        )
+        self.assertFalse(
+            veto_jsd([1.0, 1.0, 0.85], iscs_antiga=[1.0, 1.0])[0]
+        )
+
     def test_jsd_uniforme_cresce_com_n(self):
         self.assertLess(
             jsd_uniforme_para_tirania(2), jsd_uniforme_para_tirania(3)

@@ -148,12 +148,13 @@ def auditar_geodesica(grafo, simbolos_registrados, regras_atuais, proposta):
 
     # Veto JSD: a distribuição projetada dos ISCs não pode ficar
     # significativamente mais perto da Tirania do que uma distribuição
-    # equilibrada estaria.
+    # equilibrada estaria, nem regredir em direção a ela.
     iscs_nova = [rel["isc_local"] for rel in validos_nova.values()]
-    jsd_antiga = jsd_para_tirania(
-        [rel["isc_local"] for rel in validos_antiga.values()]
+    iscs_antiga = [rel["isc_local"] for rel in validos_antiga.values()]
+    jsd_antiga = jsd_para_tirania(iscs_antiga)
+    vetado_jsd, jsd_nova, jsd_uniforme_nova = veto_jsd(
+        iscs_nova, iscs_antiga=iscs_antiga
     )
-    vetado_jsd, jsd_nova, jsd_uniforme_nova = veto_jsd(iscs_nova)
     jsd_ok = not vetado_jsd
 
     sem_colapso = len(validos_nova) >= 1

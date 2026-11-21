@@ -19,6 +19,13 @@ e a formação de identidade. Não é um jogo de salas, portas e objetos.
 
 Python stdlib-only, como os outros dois repos.
 
+## Definições canônicas
+
+`DEFINICOES.md` é a fonte única das definições (ISC, VarPn, H_causal,
+veto JSD, hashes, D_hiperbólica, Heptagram/Pentacosagram) para os 4
+projetos — unificação aprovada pelo Dan em 20/11. Quando um projeto
+divergir dele, o projeto está errado.
+
 ## MCP server mínimo
 
 `cono_gym/mcp_server.py` — JSON-RPC 2.0 sobre stdio, no mesmo padrão do
