@@ -15,7 +15,7 @@ e a formação de identidade. Não é um jogo de salas, portas e objetos.
   de emergência de Símbolo: ISC_Local ≥ 0,85 E VarPn ≤ 0,36 (a Var(λ)
   antiga fica só como diagnóstico).
 - `cono_gym/demo.py` — Quatro clusters, quatro vereditos.
-- `testes/test_gym.py` + `testes/test_mcp.py` + `testes/test_episodios.py` + `testes/test_geodesica.py` + `testes/test_causal.py` + `testes/test_var_ponderada.py` + `testes/test_workspace.py` — 99 testes (14 + 21 + 8 + 9 + 19 + 19 + 9).
+- `testes/test_gym.py` + `testes/test_mcp.py` + `testes/test_episodios.py` + `testes/test_geodesica.py` + `testes/test_causal.py` + `testes/test_var_ponderada.py` + `testes/test_workspace.py` + `testes/test_hiperbolico.py` — 108 testes (14 + 21 + 8 + 9 + 19 + 19 + 9 + 9).
 
 Python stdlib-only, como os outros dois repos.
 
@@ -36,10 +36,11 @@ cono-mcp-harness (initialize, tools/list, tools/call; tool desconhecida
 printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize"}' | python3 -m cono_gym.mcp_server
 ```
 
-As 9 tools: create_uif, get_local_causal_view, deposit_trail,
+As 12 tools: create_uif, get_local_causal_view, deposit_trail,
 follow_trail, inspect_identity (só hash + tipo, nunca o estado),
-request_symbol_formation, propose_geodesic, audit_geodesic e
-request_diversity_audit (as três últimas, só com Meta-Símbolo).
+request_symbol_formation, propose_geodesic, audit_geodesic,
+request_diversity_audit (as três últimas, só com Meta-Símbolo),
+hold_direction, report_workspace e edit_direction (Espaço J, 20/11).
 
 O servidor nasce com um grafo já construído (duas cliques K6, como o
 harness nasce com um cenário), mas o agente pode CRIAR UIFs novas pela
@@ -150,16 +151,22 @@ candidatos podem se sobrepor).
 ## O MVP está fechado
 
 Grafo em memória + CanonicalHasher + espectro de Laplace + MCP server
-com 9 tools (create_uif, get_local_causal_view, deposit_trail,
+com 14 tools (create_uif, get_local_causal_view, deposit_trail,
 follow_trail, inspect_identity, request_symbol_formation,
-propose_geodesic, audit_geodesic, request_diversity_audit) + loop de
-episódios + auditoria da geodésica com critério B e veto JSD. Suíte
-com 89 testes (70 do MVP + 14 da Var ponderada, 18/11, + 5 da
-normalização, 19/11).
+propose_geodesic, audit_geodesic, request_diversity_audit,
+hold_direction, report_workspace, edit_direction, embed_hyperbolic,
+measure_geometry) + loop de
+episódios + auditoria da geodésica com critério B e veto JSD +
+Espaço J (workspace do Meta-Símbolo, 20/11) + coordenadas hiperbólicas
+(21/11). Suíte
+com 108 testes (70 do MVP + 14 da Var ponderada, 18/11, + 5 da
+normalização, 19/11, + 9 do workspace + 1 do veto com regressão, 20/11,
++ 9 do hiperbólico, 21/11).
 
-Próximos passos (fora do MVP, a decidir): coordenadas hiperbólicas
-para as UIFs no Disco de Poincaré (hoje o grafo é só topologia);
-o Meta-Símbolo propondo geodésicas por conta própria no loop.
+Próximos passos (fora do MVP, a decidir): dar um mundo ao gym
+(entrada externa — os sensores da rede-pulsos) e a camada quântica.
+A auto-proposta do Meta-Símbolo foi feita no Espaço J em 20/11, e as
+coordenadas hiperbólicas em 21/11.
 
 ## Var ponderada (18/11)
 
@@ -258,6 +265,24 @@ raciocínio dele (EEG como doação do próprio raciocínio — EEG hoje
 decodifica sinais grossos, não conteúdo de raciocínio; a semente real,
 por enquanto, são os traços em texto). Suíte com 99 testes (89 + 9 do
 workspace + 1 do veto com regressão, 20/11).
+
+## Coordenadas hiperbólicas (21/11)
+
+O lugar que faltava: cada UIF ganha um ponto no Disco de Poincaré,
+aprendido do grafo por minimização de estresse — nunca colocado à mão.
+Alvo entre dois nós: 0,6 × distância de grafo (menor caminho, sem peso);
+perda: média de (d_hiperbólico − alvo)²; descida de gradiente numérico,
+projeção para |p| ≤ 0,95, 3 reinícios, fica o de menor estresse.
+Tools novas: `embed_hyperbolic` e `measure_geometry` (14 no total).
+
+Números medidos pelo próprio embutimento: na estrela, folha-folha 1,166
+contra folha-centro 0,662 (razão 1,76×); nas duas cliques K6, cada uma
+vira uma bola apertada (raios 0,493 e 0,496) e a separação é 1,610
+(3,24× o raio); num anel, a razão máx/mín das distâncias cai de 1,99
+(r=0,1) para 1,30 (r=0,9) perto da borda. Limite honesto: a emergência
+não mudou — continua ISC ≥ 0,85 E VarPn ≤ 0,36. O que existe é a
+medição (raio e separação); "Símbolo = bola hiperbólica" é uma
+proposta a decidir, não uma regra adotada. Suíte com 108 testes.
 
 ## Rodar tudo
 

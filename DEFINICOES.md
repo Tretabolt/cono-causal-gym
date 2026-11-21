@@ -220,6 +220,17 @@ honesto: análogo funcional, não o J-space — não prova consciência,
 prova arquitetura. Semente de longo prazo: traços do raciocínio do
 Dan (EEG como visão — EEG hoje não decodifica conteúdo de raciocínio).
 
+## 14. Coordenadas hiperbólicas (21/11)
+
+Cada UIF tem um ponto no Disco de Poincaré (|p| < 1), aprendido do
+grafo por minimização de estresse (alvo 0,6 × distância de grafo).
+d(u, v) = arcosh(1 + 2|u−v|² / ((1−|u|²)(1−|v|²))). A emergência NÃO
+usa as coordenadas (continua ISC ≥ 0,85 E VarPn ≤ 0,36); o que existe
+é a medição — raio hiperbólico de um cluster e separação entre
+clusters. "Símbolo = bola hiperbólica" é uma proposta, não uma regra
+adotada. Onde vive: `cono_gym/hiperbolico.py` (distancia_poincare,
+embutir, centro_e_raio, separacao, bola_contem).
+
 ## 12. Onde vive cada implementação
 
 | definição | gym | harness | engine |
@@ -231,3 +242,4 @@ Dan (EEG como visão — EEG hoje não decodifica conteúdo de raciocínio).
 | hash de aresta | `cono_gym/hasher.py:hash_rastro` | `packages/mnhi_memory/hasher.py:hash_edge` | `src/mnhi/layer0_hasher.py:id_aresta` (selo) |
 | D hiperbólica | — | `metrics.poincare_distance` | `extrapolation.py:causal_kl_divergence` (D_KL) |
 | Espaço J | `cono_gym/workspace.py:EspacoJ` | — | — |
+| Coordenadas hiperbólicas | `cono_gym/hiperbolico.py:embutir` | — | — |

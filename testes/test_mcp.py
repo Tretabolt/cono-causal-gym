@@ -70,6 +70,8 @@ class TesteTransporte(unittest.TestCase):
                 "hold_direction",
                 "report_workspace",
                 "edit_direction",
+                "embed_hyperbolic",
+                "measure_geometry",
             ],
         )
 

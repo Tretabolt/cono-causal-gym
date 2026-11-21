@@ -5,11 +5,12 @@ initialize, tools/list, tools/call, e nada mais. Ferramenta desconhecida
 é recusada pela AI-Jail — o servidor nunca inventa uma tool.
 
 Tools (as 5 do spec + as 2 exclusivas do Meta-Símbolo + create_uif +
-  as 3 do Espaço J):
+  as 3 do Espaço J + as 2 hiperbólicas):
   create_uif, get_local_causal_view, deposit_trail, follow_trail,
   inspect_identity, request_symbol_formation, propose_geodesic,
   audit_geodesic, request_diversity_audit, hold_direction,
-  report_workspace, edit_direction.
+  report_workspace, edit_direction, embed_hyperbolic,
+  measure_geometry.
 
 O servidor nasce com um grafo já construído (como o harness nasce com
 um cenário), mas o agente pode CRIAR UIFs novas pela tool create_uif:
@@ -36,6 +37,7 @@ from .causal import causal_entropy_bits, pode_emergir_meta_simbolo
 from .espectro import avaliar_cluster
 from .geodesica import auditar_geodesica
 from .grafo import GrafoCausal, UIF
+from .hiperbolico import centro_e_raio, embutir, separacao
 from .workspace import EspacoJ
 
 
@@ -105,6 +107,8 @@ class ConoGymServer:
         {"name": "hold_direction", "inputSchema": {"type": "object", "properties": {"tipo": {"type": "string"}, "regra": {"type": "string"}, "de": {"type": "number"}, "para": {"type": "number"}, "motivo": {"type": "string"}}, "required": ["regra", "de", "para", "motivo"]}},
         {"name": "report_workspace", "inputSchema": {"type": "object", "properties": {}}},
         {"name": "edit_direction", "inputSchema": {"type": "object", "properties": {"direcao_id": {"type": "integer"}, "mudancas": {"type": "object"}}, "required": ["direcao_id", "mudancas"]}},
+        {"name": "embed_hyperbolic", "inputSchema": {"type": "object", "properties": {"passos": {"type": "integer"}, "semente": {"type": "integer"}}}},
+        {"name": "measure_geometry", "inputSchema": {"type": "object", "properties": {"clusters": {"type": "object"}}}},
     ]
 
     def __init__(self, grafo: GrafoCausal) -> None:
@@ -116,6 +120,10 @@ class ConoGymServer:
         # Espaço J: o workspace do Meta-Símbolo (análogo funcional do
         # J-space). Nasce vazio; só o Meta-Símbolo segura e edita.
         self.workspace = EspacoJ()
+        # Mapa hiperbólico: hash -> (x, y) no Disco de Poincaré.
+        # Nasce vazio; embed_hyperbolic aprende do grafo.
+        self.mapa = None
+        self.stress = None
         # Regras de julgamento vigentes. Só mudam por geodésica aprovada.
         self.regras = {"limiar_isc": 0.85, "limiar_var": 0.36, "limiar_gini": 0.30}
 
@@ -185,6 +193,12 @@ class ConoGymServer:
             return self._relatar_workspace()
         if name == "edit_direction":
             return self._editar_direcao(int(args["direcao_id"]), args["mudancas"])
+        if name == "embed_hyperbolic":
+            return self._embutir(
+                int(args.get("passos", 200)), int(args.get("semente", 42))
+            )
+        if name == "measure_geometry":
+            return self._medir_geometria(args.get("clusters"))
         raise ValueError(f"Tool nao autorizada pela AI-Jail: {name}")
 
     # -- Tools ----------------------------------------------------------
@@ -336,6 +350,66 @@ class ConoGymServer:
         if not isinstance(mudancas, dict):
             raise ValueError("mudancas precisa ser um objeto")
         return self.workspace.editar(direcao_id, **mudancas)
+
+    # -- Geometria hiperbólica -----------------------------------------
+
+    def _embutir(self, passos, semente):
+        resultado = embutir(self.grafo, passos=passos, semente=semente)
+        self.mapa = resultado["coordenadas"]
+        self.stress = resultado["stress"]
+        return resultado
+
+    def _medir_geometria(self, clusters):
+        if self.mapa is None:
+            raise ValueError(
+                "Sem mapa hiperbólico: use embed_hyperbolic primeiro."
+            )
+        if clusters is None:
+            # Sem clusters dados, mede os Símbolos registrados.
+            clusters = {
+                serial: rel.get("membros", [])
+                for serial, rel in self.simbolos.items()
+            }
+        if not isinstance(clusters, dict):
+            raise ValueError("clusters precisa ser um objeto nome -> hashes")
+        medicoes = {}
+        for nome, membros in clusters.items():
+            pontos = [self.mapa[h] for h in membros if h in self.mapa]
+            if not pontos:
+                raise ValueError(f"cluster sem coordenadas no mapa: {nome}")
+            centro, raio = centro_e_raio(pontos)
+            medicoes[nome] = {
+                "centro": [round(centro[0], 4), round(centro[1], 4)],
+                "raio": round(raio, 4),
+                "n": len(pontos),
+            }
+        nomes = sorted(medicoes)
+        separacoes = {}
+        for i, a in enumerate(nomes):
+            for b in nomes[i + 1:]:
+                pontos_a = [
+                    self.mapa[h]
+                    for h in clusters[a]
+                    if h in self.mapa
+                ]
+                pontos_b = [
+                    self.mapa[h]
+                    for h in clusters[b]
+                    if h in self.mapa
+                ]
+                sep = separacao(pontos_a, pontos_b)
+                raio_max = max(medicoes[a]["raio"], medicoes[b]["raio"])
+                separacoes[f"{a}-{b}"] = {
+                    "separacao": round(sep, 4),
+                    "razao_sep_raio": round(sep / raio_max, 2)
+                    if raio_max
+                    else None,
+                }
+        return {
+            "stress": self.stress,
+            "clusters": medicoes,
+            "separacoes": separacoes,
+        }
 
     def _meta_propor_direcao(self):
         """A direção que o Meta-Símbolo gera sozinho, das medições (v0.1):
