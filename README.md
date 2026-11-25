@@ -16,6 +16,7 @@ e a formação de identidade. Não é um jogo de salas, portas e objetos.
   antiga fica só como diagnóstico).
 - `cono_gym/demo.py` — Quatro clusters, quatro vereditos.
 - `testes/test_gym.py` + `testes/test_mcp.py` + `testes/test_episodios.py` + `testes/test_geodesica.py` + `testes/test_causal.py` + `testes/test_var_ponderada.py` + `testes/test_workspace.py` + `testes/test_hiperbolico.py` — 108 testes (14 + 21 + 8 + 9 + 19 + 19 + 9 + 9).
+- `cono_gym/party_causal.py` — cenário de teste "Isekai Zero — A Party Causal" (24/11/2026): 6 UIFs-arquétipos, 40 ticks, métricas a cada 10 ticks (ISC_Local, VarPn, ISC_aux densidade+Gini, λ₂, MIP por força bruta, JSD_pesos); `testes/test_party_causal.py` — 22 testes. Total: 130 testes.
 
 Python stdlib-only, como os outros dois repos.
 

@@ -23,6 +23,14 @@ from .mcp_server import (
     construir_cenario_duas_cliques,
     construir_cenario_tres_cliques,
 )
+from .party_causal import (
+    calibrar_lambda2,
+    isc_auxiliar_densidade_gini,
+    jsd_pesos,
+    lambda2,
+    mip_forca_bruta,
+    rodar_party_causal,
+)
 
 __all__ = [
     "ConoGymServer",
@@ -33,6 +41,7 @@ __all__ = [
     "auditar_geodesica",
     "auditoria_diversidade",
     "avaliar_cluster",
+    "calibrar_lambda2",
     "causal_entropy_bits",
     "construir_cenario_duas_cliques",
     "construir_cenario_tres_cliques",
@@ -41,9 +50,14 @@ __all__ = [
     "hash_rastro",
     "hash_simbolo",
     "hash_uif",
+    "isc_auxiliar_densidade_gini",
     "isc_local",
     "jsd_bits",
     "jsd_para_tirania",
+    "jsd_pesos",
+    "lambda2",
+    "mip_forca_bruta",
+    "rodar_party_causal",
     "pode_emergir_meta_simbolo",
     "prototipo_tirania",
     "var_lambda",
