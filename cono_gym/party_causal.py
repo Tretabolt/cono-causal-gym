@@ -467,8 +467,16 @@ def _agir_lira(est):
     forte = est.rastro_mais_forte()
     if forte is not None and forte.peso >= 0.80 and rng.random() < 0.55:
         outro = est.nome_de_hash(forte.destino if forte.origem == est.hashes["Sistema"] else forte.origem)
-        est.depositar("Lira", "Lira", outro, "contra-rastro", rng.uniform(0.30, 0.45))
-        return "depositar_contra_rastro"
+        # Guarda de autoalvo: um rastro não pode ligar uma UIF a
+        # ela mesma. Se o outro extremo for a própria Lira, salta
+        # o depósito e cai no ramo seguinte, sem consumir mais
+        # aleatoriedade. Na dinâmica da base nunca dispara (o
+        # rastro mais forte nunca tem origem na Lira); variantes
+        # que levantam pesos com origem na Lira (ex.: a Sora a
+        # amplificar) batiam aqui antes da guarda existir.
+        if outro != "Lira":
+            est.depositar("Lira", "Lira", outro, "contra-rastro", rng.uniform(0.30, 0.45))
+            return "depositar_contra_rastro"
     if rng.random() < 0.50:
         estavel = est.rastro_mais_estavel("Lira")
         if estavel is not None:
@@ -488,8 +496,12 @@ def _agir_kael(est):
             if rng.random() < 0.50:
                 return "ignorar_forte"
             outro = est.nome_de_hash(forte.destino if forte.origem == est.hashes["Sistema"] else forte.origem)
-            est.depositar("Kael", "Kael", outro, "filtro", rng.uniform(0.15, 0.25))
-            return "depositar_filtro"
+            # Guarda de autoalvo (ver a Lira acima): se o outro
+            # extremo for o próprio Kael, salta o depósito e cai
+            # no ramo da âncora, sem consumir mais aleatoriedade.
+            if outro != "Kael":
+                est.depositar("Kael", "Kael", outro, "filtro", rng.uniform(0.15, 0.25))
+                return "depositar_filtro"
     sub = est.subgrafo_party()
     if gini(sub.pesos()) > 0.30 and sub.n_arestas() >= 5:
         if rng.random() < 0.60:
