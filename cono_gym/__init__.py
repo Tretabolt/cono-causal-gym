@@ -31,6 +31,7 @@ from .party_causal import (
     mip_forca_bruta,
     rodar_party_causal,
 )
+from .party_causal_tyranny import jsd_pesos_ordenado, rodar_party_causal_tyranny
 
 __all__ = [
     "ConoGymServer",
@@ -55,9 +56,11 @@ __all__ = [
     "jsd_bits",
     "jsd_para_tirania",
     "jsd_pesos",
+    "jsd_pesos_ordenado",
     "lambda2",
     "mip_forca_bruta",
     "rodar_party_causal",
+    "rodar_party_causal_tyranny",
     "pode_emergir_meta_simbolo",
     "prototipo_tirania",
     "var_lambda",
